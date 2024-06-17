@@ -59,4 +59,6 @@ class Constant:
         self.AnalyseDataHumidity = []
         self.AnalyseDataHumidityTime = []
 
+        self.AnalyseDataAll = []
+        self.AnalyseDataAllTime = []
         return

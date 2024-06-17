@@ -73,7 +73,7 @@ class AppData:
         if(self._Store._Constant.QueryTime == []):
             self.Download_Files(self)
             self.Check_Data(self)
-            if not self.GetData_FromTbl(self):
+            if not self.GetData_FromTbl2(self):
                 return False
         
         else:
@@ -82,7 +82,7 @@ class AppData:
             if not (self._Store._Constant.Missing_Dates == []):
                 self.Download_Files_Missing(self, self._Store._Constant.Missing_Dates)
             
-            self.GetData_FromTbl(self)
+            self.GetData_FromTbl2(self)
         
         return True
     
@@ -103,6 +103,86 @@ class AppData:
         for entry in data:
             self._Store._Constant.AnalyseDataAverage.append(float(entry[1]))
             self._Store._Constant.AnalyseDataAverageTime.append(entry[0])
+        
+        return True
+
+    def GetData_FromTbl2(self):
+        if(self._Store._Constant.QueryTime == []):
+            return False
+        
+        # Konvertiere die Datumswerte in datetime-Objekte
+        start_date = self._Store._Constant.CurrentCalendarStart
+        end_date = self._Store._Constant.CurrentCalendarEnd
+
+        # Berechne die Anzahl der Tage zwischen den beiden Daten
+        delta = end_date - start_date
+
+        # Erzeuge eine Liste von Datumswerten zwischen den beiden Daten
+        date_list = [start_date + timedelta(days=i) for i in range(delta.days + 1)]
+
+        lowestTemp = 100000.0
+        highestTemp = -100000.0
+        humidityTemp = 0
+        index = 0
+        totalTemp = 0
+        temperatureTemp = []
+        timeTemp = []
+
+
+        self._Store._Constant.AnalyseDataMax = []
+        self._Store._Constant.AnalyseDataMaxTime = []
+            
+        self._Store._Constant.AnalyseDataMin = []
+        self._Store._Constant.AnalyseDataMinTime = []
+            
+        self._Store._Constant.AnalyseDataHumidity = []
+        self._Store._Constant.AnalyseDataHumidityTime = []
+            
+        self._Store._Constant.AnalyseDataAverage = []
+        self._Store._Constant.AnalyseDataAverageTime = []
+            
+        self._Store._Constant.AnalyseDataAll = []
+        self._Store._Constant.AnalyseDataAllTime = []
+        
+        # Ausgabe der Datumswerte
+        for date in date_list:
+            # Datum für Abfrage formatieren
+            start = date - timedelta(days=1)
+            end = date + timedelta(days=1)
+            
+            #Abfrage durchführen
+            self.cursor.execute(f"SELECT timestamp, temperature, humidity FROM {self._Store._Constant.CurrentSensortbl} WHERE timestamp > '{start}' AND timestamp < '{end}'")
+            date_db = self.cursor.fetchall()
+            if(date_db == []):
+                return False
+            
+            for entry in date_db:
+                if entry[1] < lowestTemp:
+                    lowestTemp = entry[1]
+                if entry[1] > highestTemp:
+                    highestTemp = entry[1]
+                humidityTemp = humidityTemp + entry[2]
+                totalTemp = totalTemp + entry[1]
+                
+                temperatureTemp.append(entry[1])
+                timeTemp.append(entry[0])
+                index += 1
+        
+
+            self._Store._Constant.AnalyseDataMax.append(str(highestTemp))
+            self._Store._Constant.AnalyseDataMaxTime.append(str(date.date()))
+            
+            self._Store._Constant.AnalyseDataMin.append(str(lowestTemp))
+            self._Store._Constant.AnalyseDataMinTime.append(str(date.date()))
+            
+            self._Store._Constant.AnalyseDataHumidity.append(str(round(humidityTemp / index, 2)))
+            self._Store._Constant.AnalyseDataHumidityTime.append(str(date.date()))
+            
+            self._Store._Constant.AnalyseDataAverage.append(str(round(totalTemp / index, 2)))
+            self._Store._Constant.AnalyseDataAverageTime.append(str(date.date()))
+            
+            self._Store._Constant.AnalyseDataAll = temperatureTemp
+            self._Store._Constant.AnalyseDataAllTime = timeTemp
         
         return True
 
